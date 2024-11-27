@@ -34,8 +34,8 @@ def sample_pixelcnn_continous(model, num=64,ep=0):
     x = torch.zeros(num, 1, 28, 28).cuda()
     for i in trange(28,desc=f'Epoch {ep} sampling'):
         for j in range(28):
-            mu = model(x); logvar = torch.tensor(-2.0).cuda().repeat(*x.shape)
-            # mu, logvar = model(x)
+            # mu = model(x); logvar = torch.tensor(-2.0).cuda().repeat(*x.shape)
+            mu, logvar = model(x)
             x[:, :, i, j] = torch.normal(mu[:, :, i, j], torch.exp(logvar[:, :, i, j]/2)).clamp(0,1)
     grid = vutils.make_grid(x, nrow=8)
     vutils.save_image(grid, f'samples/{ep}_pixelcnn_c.png')
@@ -75,5 +75,5 @@ def evaluate(pixelcnn_path, model_path):
     vutils.save_image(grid, f'samples/merge_{pixelcnn_path}_and_{model_path}.png')
     
 if __name__ == '__main__':
-    evaluate('9_pixelcnn_c.pth','49.pth')
+    evaluate('49_pixelcnn_c.pth','49.pth')
     # evaluate('Gaussian','49.pth')

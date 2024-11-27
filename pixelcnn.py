@@ -61,10 +61,17 @@ class PixelCNNContinous(nn.Module):
             nn.ReLU(),
             MaskedConv2d(in_channels=64,out_channels=128,kernel_size=11,padding=5,type_='B'),
             nn.ReLU(),
-            nn.Conv2d(128,1,kernel_size=1) # predicting mu and logvar doesn't work
+            nn.Conv2d(128,32,kernel_size=1), # predicting mu and logvar doesn't work
+            nn.ReLU(),
+            nn.Conv2d(32,2,kernel_size=1) # predicting mu and logvar doesn't work
         )
+        self.layers[-1].weight.data.zero_()
+        self.layers[-1].bias.data.zero_()
         
     def forward(self, x):
-        return self.layers(x)
-        # return self.layers(x).chunk(2,dim=1)
+        # return self.layers(x)
+        mu, logvar = self.layers(x).chunk(2,dim=1)
+        # avoid cheating by very small logvar
+        logvar = torch.clamp(logvar,-5,5)
+        return mu, logvar
     ##################

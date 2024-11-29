@@ -2,14 +2,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class SiLU(nn.Module):
+    def forward(self,x):
+        return x*torch.sigmoid(x)
+    
+
 class SinousEmbedding(nn.Module):
     def __init__(self, dim) -> None:
         super().__init__()
         assert dim%2==0,NotImplementedError()
-        self.angles = (10000.**(-2/dim))**torch.arange(1,dim//2+1,1,dtype=torch.float).cuda()
+        self.angles = (10000.**(-2/dim))**torch.arange(1,dim//2+1,1,dtype=torch.float)
+        # self.angles = (10000.**(-2/dim))**torch.arange(1,dim//2+1,1,dtype=torch.float).cuda()
         self.angles.requires_grad_(False)
     def forward(self,x):
-        angles = torch.einsum('m,i->im',self.angles,x.float())
+        angles = torch.einsum('m,i->im',self.angles.to(x.device),x.float())
         return torch.cat((torch.sin(angles),torch.cos(angles)),dim=1)
     
 class ResidualBlock(nn.Module):
@@ -36,13 +42,13 @@ class Attention(nn.Module):
     def __init__(self,channels=128,attn_dim=32) -> None:
         super().__init__()
         self.norm = nn.LayerNorm(channels)
-        self.Q = nn.Conv2d(channels,attn_dim,kernel_size=1,bias=False)
-        self.K = nn.Conv2d(channels,attn_dim,kernel_size=1,bias=False)
-        self.V = nn.Conv2d(channels,channels,kernel_size=1,bias=False)
+        self.Q = nn.Conv2d(channels,attn_dim,kernel_size=1,bias=True)
+        self.K = nn.Conv2d(channels,attn_dim,kernel_size=1,bias=True)
+        self.V = nn.Conv2d(channels,channels,kernel_size=1,bias=True)
         self.out_proj = nn.Conv2d(channels,channels,kernel_size=1)
-        self.Q.weight.data.normal_(0,0.02)
-        self.K.weight.data.normal_(0,0.02)
-        self.V.weight.data.normal_(0,0.02)
+        # self.Q.weight.data.normal_(0,0.02)
+        # self.K.weight.data.normal_(0,0.02)
+        # self.V.weight.data.normal_(0,0.02)
     
     def forward(self,x):
         xc = x.clone()
@@ -64,7 +70,7 @@ class F_x_t(nn.Module):
         self.conv_channels = out_channels
         self.conv = nn.Conv2d(in_channels, self.conv_channels, kernel_size=kernel_size, padding=kernel_size//2)
         self.out_size = out_size
-        self.fc = nn.Linear(t_shape, self.t_channels)
+        self.fc = nn.Sequential(SiLU(),nn.Linear(t_shape, self.t_channels))
         self.attn = attn
         self.residual = residual
         if attn:
@@ -86,15 +92,21 @@ class F_x_t(nn.Module):
                     val = self.attentions[i](val)
         return val
 
+
 class UNet(nn.Module):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-        self.t_embedding_dim = 32
-        self.t_embedding = SinousEmbedding(dim=self.t_embedding_dim)
+        self.t_embedding_dim = 128
+        self.t_embedding = nn.Sequential(
+            SinousEmbedding(dim=self.t_embedding_dim),
+            nn.Linear(self.t_embedding_dim,self.t_embedding_dim),
+            SiLU(),
+            nn.Linear(self.t_embedding_dim,self.t_embedding_dim),
+        )
         self.up= nn.ModuleList([
-            F_x_t(in_channels=1,out_channels=32,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
-            F_x_t(in_channels=32,out_channels=64,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
-            F_x_t(in_channels=64,out_channels=128,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=1,out_channels=128,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
+            F_x_t(in_channels=128,out_channels=128,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=128,out_channels=128,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
             # ResidualBlock(channels=128,kernel_size=3,t_dim=self.t_embedding_dim),
             # F_x_t(in_channels=128,out_channels=128,out_size=4,kernel_size=1,t_shape=self.t_embedding_dim),
         ])
@@ -106,12 +118,14 @@ class UNet(nn.Module):
         ])
         self.down= nn.ModuleList([
             # F_x_t(in_channels=128,out_channels=128,out_size=2,kernel_size=1,t_shape=self.t_embedding_dim),
-            F_x_t(in_channels=128,out_channels=64,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
-            F_x_t(in_channels=64,out_channels=32,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
-            F_x_t(in_channels=32,out_channels=16,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
+            F_x_t(in_channels=128,out_channels=128,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=128,out_channels=128,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=128,out_channels=128,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
         ])
         # self.end_mlp = nn.Conv2d(32,1,kernel_size=3,padding=1)
-        self.end_mlp = nn.Conv2d(16,1,kernel_size=1)
+        self.end_mlp = nn.Conv2d(128,1,kernel_size=1)
+        self.end_mlp.weight.data.zero_()
+        self.end_mlp.bias.data.zero_()
 
     def forward(self,x,t):
         x = x.reshape(-1,1,28,28)

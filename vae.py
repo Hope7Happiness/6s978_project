@@ -45,3 +45,14 @@ class VAE(nn.Module):
         kl_loss = self.kl(mu, logvar)
         return recon_loss + kl_loss, recon_loss, kl_loss
     
+class noiseVAE(VAE):
+    def decode(self,z):
+        return super().decode(z) + torch.randn(z.shape[0],1,28,28,device=z.device)/torch.sqrt(torch.tensor(2.))
+    
+    def forward(self,x):
+        mu, logvar = self.encode(x)
+        z = mu + torch.randn_like(mu) * torch.exp(logvar/2)
+        x_recon = super().decode(z)
+        recon_loss = F.mse_loss(x_recon, x) * (x.numel() / x.shape[0])
+        kl_loss = self.kl(mu, logvar)
+        return recon_loss + kl_loss, recon_loss, kl_loss

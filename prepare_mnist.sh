@@ -1,0 +1,1 @@
+python dataset_tool.py --source /home/zhh/data/MNIST/raw/train-images-idx3-ubyte.gz --dest ./mnist_fid_cache

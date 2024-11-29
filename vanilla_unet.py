@@ -94,9 +94,9 @@ class F_x_t(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self,nf=128,**kwargs) -> None:
         super().__init__()
-        self.t_embedding_dim = 128
+        self.t_embedding_dim = nf
         self.t_embedding = nn.Sequential(
             SinousEmbedding(dim=self.t_embedding_dim),
             nn.Linear(self.t_embedding_dim,self.t_embedding_dim),
@@ -104,26 +104,26 @@ class UNet(nn.Module):
             nn.Linear(self.t_embedding_dim,self.t_embedding_dim),
         )
         self.up= nn.ModuleList([
-            F_x_t(in_channels=1,out_channels=128,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
-            F_x_t(in_channels=128,out_channels=128,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
-            F_x_t(in_channels=128,out_channels=128,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=1,out_channels=nf,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
+            F_x_t(in_channels=nf,out_channels=nf,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=nf,out_channels=nf,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
             # ResidualBlock(channels=128,kernel_size=3,t_dim=self.t_embedding_dim),
             # F_x_t(in_channels=128,out_channels=128,out_size=4,kernel_size=1,t_shape=self.t_embedding_dim),
         ])
         self.middle = nn.ModuleList([
             # nn.Identity()
-            F_x_t(in_channels=128,out_channels=128,out_size=4,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=nf,out_channels=nf,out_size=4,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
             # ResidualBlock(channels=128,kernel_size=3,t_dim=self.t_embedding_dim),
             # F_x_t(in_channels=128,out_channels=128,out_size=4,kernel_size=1,t_shape=self.t_embedding_dim,attn=False),
         ])
         self.down= nn.ModuleList([
             # F_x_t(in_channels=128,out_channels=128,out_size=2,kernel_size=1,t_shape=self.t_embedding_dim),
-            F_x_t(in_channels=128,out_channels=128,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
-            F_x_t(in_channels=128,out_channels=128,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
-            F_x_t(in_channels=128,out_channels=128,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
+            F_x_t(in_channels=nf,out_channels=nf,out_size=8,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=nf,out_channels=nf,out_size=16,kernel_size=3,t_shape=self.t_embedding_dim,attn=True),
+            F_x_t(in_channels=nf,out_channels=nf,out_size=32,kernel_size=3,t_shape=self.t_embedding_dim),
         ])
         # self.end_mlp = nn.Conv2d(32,1,kernel_size=3,padding=1)
-        self.end_mlp = nn.Conv2d(128,1,kernel_size=1)
+        self.end_mlp = nn.Conv2d(nf,1,kernel_size=1)
         self.end_mlp.weight.data.zero_()
         self.end_mlp.bias.data.zero_()
 

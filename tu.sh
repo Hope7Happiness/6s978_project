@@ -1,1 +1,0 @@
-rsync -av mitgpu:/nobackup/users/zhh24/dev/6s978_proj/samples ./remote_samples

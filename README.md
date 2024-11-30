@@ -17,9 +17,17 @@ You may reproduce most of our results with the interactive notebooks in this rep
     - Merge VAE and a very light-weighted DDPM;
     - The experiment on scaling the VAE generated images;
     - The experiment on ODE sampler and Flow Matching Models.
-- `fid.ipynb`: repeat most of the experiments in `sample.ipynb`, but with FID evaluation.
 
-All the computations can be done on a single NVIDIA RTX 4090 GPU in a reasonable amount of time. We use Pytorch 2.4.1 and Python 3.10.0. The FID evaluation is done with the [clean-fid](https://github.com/GaParmar/clean-fid) package.
+<!-- - `fid.ipynb`: repeat most of the experiments in `sample.ipynb`, but with FID evaluation. To run the FID part, please first do the following commands:
+
+```bash
+python dataset_tool.py --source /path/to/your/MNIST/dataset/train-images-idx3-ubyte.gz --dest ./mnist_fid_cache
+pip install clean-fid
+``` -->
+
+All the computations can be done on a single NVIDIA RTX 4090 GPU in a reasonable amount of time. We use Pytorch 2.4.1 and Python 3.10.0.
+
+<!-- The FID evaluation is done with the [clean-fid](https://github.com/GaParmar/clean-fid) package. -->
 
 ## Acknowledgement
 

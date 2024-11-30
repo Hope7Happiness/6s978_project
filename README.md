@@ -1,4 +1,4 @@
-# 6.S978 Course Project
+# 6.S978 Course Project: Speeding Up Diffusion Models with One-step Generators  
 
 ![main](./assets/caption.png)
 

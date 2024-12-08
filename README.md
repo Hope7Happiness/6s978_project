@@ -2,7 +2,7 @@
 
 ![main](./assets/caption.png)
 
-[presentation slides](https://docs.google.com/presentation/d/1133fIbl01ey44OWSUnUvfYG6liOJe7dOcw6m9tKmvoY) | [blog post](https://hope7happiness.github.io/accel_diff)
+[presentation slides](https://docs.google.com/presentation/d/1133fIbl01ey44OWSUnUvfYG6liOJe7dOcw6m9tKmvoY) | [blog post](https://hope7happiness.github.io/three_diff)
 
 *By: Zhicheng Jiang, Hanhong Zhao*
 

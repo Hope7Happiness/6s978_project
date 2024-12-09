@@ -18,6 +18,8 @@ You may reproduce most of our results with the interactive notebooks in this rep
     - The experiment on scaling the VAE generated images;
     - The experiment on ODE sampler and Flow Matching Models.
 
+Note: `blog_post_demo/demo.ipynb` is not included in the main part of the project, and it is only for the purpose of the blog post.
+
 <!-- - `fid.ipynb`: repeat most of the experiments in `sample.ipynb`, but with FID evaluation. To run the FID part, please first do the following commands:
 
 ```bash
